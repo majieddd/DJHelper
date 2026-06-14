@@ -29,6 +29,15 @@ def _primary_key(file_path: str) -> str:
     return f"{vol}{dir_str}{name}"
 
 
+def _musical_key_value(t: dict):
+    """Traktor MUSICAL_KEY VALUE (0-23): major = pitch (0=C), minor = 12+pitch.
+    Verified empirically against a real Traktor 4 collection."""
+    pc = t.get("key_pitch")
+    if pc is None:
+        return None
+    return int(pc) % 12 + (0 if t.get("key_major") else 12)
+
+
 def _entry_xml(t: dict) -> str:
     file_path = t.get("file")
     if not file_path:
@@ -36,32 +45,50 @@ def _entry_xml(t: dict) -> str:
     vol, dir_str, name = _to_location(file_path)
     bpm = t.get("bpm") or 0.0
 
+    # CUE order: a beatgrid anchor (TYPE 4) so the locked grid is usable, then
+    # the two hot cues on pads 1 and 2.
     cues = []
+    grid_ms = t.get("cue_in_ms")
+    if grid_ms is not None:
+        cues.append(
+            f'    <CUE_V2 NAME="AutoGrid" DISPL_ORDER="0" TYPE="4" '
+            f'START="{float(grid_ms):.6f}" LEN="0.000000" REPEATS="-1" HOTCUE="-1"></CUE_V2>'
+        )
     if t.get("cue_in_ms") is not None:
         cues.append(
-            f'    <CUE_V2 NAME="Mix In" DISPL_ORDER="0" TYPE="0" '
+            f'    <CUE_V2 NAME="Mix In" DISPL_ORDER="1" TYPE="0" '
             f'START="{float(t["cue_in_ms"]):.6f}" LEN="0.000000" REPEATS="-1" HOTCUE="0"></CUE_V2>'
         )
     if t.get("cue_out_ms") is not None:
         cues.append(
-            f'    <CUE_V2 NAME="Mix Out" DISPL_ORDER="1" TYPE="0" '
+            f'    <CUE_V2 NAME="Mix Out" DISPL_ORDER="2" TYPE="0" '
             f'START="{float(t["cue_out_ms"]):.6f}" LEN="0.000000" REPEATS="-1" HOTCUE="1"></CUE_V2>'
         )
     cue_block = "\n".join(cues)
+
+    key_val = _musical_key_value(t)
+    musical_key = (
+        f'    <MUSICAL_KEY VALUE="{key_val}"></MUSICAL_KEY>\n' if key_val is not None else ""
+    )
 
     title = quoteattr(t.get("title", "Unknown"))
     artist = quoteattr(t.get("artist", "Unknown"))
     album = quoteattr(t.get("album", ""))
     playtime = int((t.get("duration_ms") or 0) / 1000)
 
+    # LOCK="1" stops Traktor re-analysing on load, so our BPM/key/grid stick
+    # (Traktor otherwise often halves high BPMs and re-detects the key).
     return (
-        f'  <ENTRY MODIFIED_DATE="2026/1/1" MODIFIED_TIME="0" TITLE={title} ARTIST={artist}>\n'
+        f'  <ENTRY MODIFIED_DATE="2026/1/1" MODIFIED_TIME="0" '
+        f'LOCK="1" LOCK_MODIFICATION_TIME="2026-06-14T00:00:00" '
+        f'TITLE={title} ARTIST={artist}>\n'
         f'    <LOCATION DIR={quoteattr(dir_str)} FILE={quoteattr(name)} '
         f'VOLUME={quoteattr(vol)} VOLUMEID={quoteattr(vol)}></LOCATION>\n'
         f'    <ALBUM TITLE={album}></ALBUM>\n'
         f'    <INFO PLAYTIME="{playtime}" KEY={quoteattr(t.get("key_name") or "")} '
         f'COMMENT={quoteattr("Camelot " + (t.get("camelot") or ""))}></INFO>\n'
         f'    <TEMPO BPM="{float(bpm):.6f}" BPM_QUALITY="100.000000"></TEMPO>\n'
+        f'{musical_key}'
         f'{cue_block}\n'
         f'  </ENTRY>'
     )
