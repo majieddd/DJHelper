@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env
+data/
+*.nml
+*.m3u8
+.DS_Store
+.cache

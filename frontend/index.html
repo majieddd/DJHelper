@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DJHelper — Spotify → Traktor set builder</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="bg-zinc-950 text-zinc-200 min-h-screen">
+  <div class="max-w-5xl mx-auto px-5 py-8">
+
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold tracking-tight text-white">
+          🎧 DJHelper
+        </h1>
+        <p class="text-sm text-zinc-400">Spotify playlists → harmonically-mixed Traktor Pro sets</p>
+      </div>
+      <div id="pills" class="flex gap-2 text-xs"></div>
+    </header>
+
+    <!-- Step 1: Import -->
+    <section class="card">
+      <h2 class="step"><span>1</span> Import a Spotify playlist</h2>
+      <div class="flex gap-2 mt-3">
+        <input id="playlistUrl" type="text" placeholder="https://open.spotify.com/playlist/..."
+               class="input flex-1" />
+        <button id="importBtn" class="btn-primary">Import</button>
+      </div>
+      <p id="importMsg" class="text-xs text-zinc-500 mt-2"></p>
+    </section>
+
+    <!-- Step 2: Download & analyze -->
+    <section class="card">
+      <div class="flex items-center justify-between">
+        <h2 class="step"><span>2</span> Download &amp; analyze</h2>
+        <label class="text-xs flex items-center gap-2 text-zinc-400">
+          <input id="dlToggle" type="checkbox" checked class="accent-emerald-500" />
+          download missing audio (yt-dlp)
+        </label>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button id="processBtn" class="btn-primary">Download &amp; Analyze</button>
+        <button id="clearBtn" class="btn-ghost">Clear library</button>
+      </div>
+      <div id="progressWrap" class="hidden mt-4">
+        <div class="flex justify-between text-xs text-zinc-400 mb-1">
+          <span id="progressPhase">—</span><span id="progressCount"></span>
+        </div>
+        <div class="h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div id="progressBar" class="h-full bg-emerald-500 transition-all" style="width:0%"></div>
+        </div>
+        <p id="progressCurrent" class="text-xs text-zinc-500 mt-1 truncate"></p>
+      </div>
+    </section>
+
+    <!-- Library table -->
+    <section class="card">
+      <div class="flex items-center justify-between mb-2">
+        <h2 class="text-sm font-semibold text-zinc-300">Library <span id="libCount" class="text-zinc-500"></span></h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="text-xs text-zinc-500 text-left border-b border-zinc-800">
+            <tr><th class="py-2 pr-2">#</th><th class="pr-2">Track</th><th class="pr-2">Key</th>
+                <th class="pr-2">BPM</th><th class="pr-2">Energy</th><th>Status</th></tr>
+          </thead>
+          <tbody id="libBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Step 3: Build set -->
+    <section class="card">
+      <h2 class="step"><span>3</span> Build the set</h2>
+      <div class="grid sm:grid-cols-3 gap-4 mt-3 text-xs text-zinc-400">
+        <label>Harmonic priority <span id="vHarm">0.50</span>
+          <input id="harm" type="range" min="0" max="1" step="0.05" value="0.5" class="slider" /></label>
+        <label>BPM priority <span id="vBpm">0.35</span>
+          <input id="bpm" type="range" min="0" max="1" step="0.05" value="0.35" class="slider" /></label>
+        <label>Energy-curve priority <span id="vEnergy">0.15</span>
+          <input id="energy" type="range" min="0" max="1" step="0.05" value="0.15" class="slider" /></label>
+        <label>Peak position <span id="vPeak">0.70</span>
+          <input id="peak" type="range" min="0.3" max="0.9" step="0.05" value="0.7" class="slider" /></label>
+        <label class="flex items-center gap-2 mt-4">
+          <input id="aiToggle" type="checkbox" class="accent-emerald-500" />
+          use local AI (Gemma) <span id="aiState" class="text-zinc-600"></span>
+        </label>
+      </div>
+      <button id="sequenceBtn" class="btn-primary mt-4">Build set</button>
+      <p id="narrative" class="hidden mt-4 text-sm text-emerald-200/90 bg-emerald-950/40 border border-emerald-900/50 rounded-lg p-3"></p>
+      <ol id="setList" class="mt-4 space-y-1"></ol>
+    </section>
+
+    <!-- Step 4: Export -->
+    <section class="card">
+      <h2 class="step"><span>4</span> Export to Traktor</h2>
+      <div class="flex gap-2 mt-3">
+        <input id="setName" type="text" value="DJHelper Set" class="input flex-1" />
+        <button id="exportBtn" class="btn-primary">Export NML + M3U</button>
+      </div>
+      <div id="exportMsg" class="text-xs text-zinc-400 mt-3"></div>
+    </section>
+
+    <footer class="text-center text-xs text-zinc-600 mt-10">
+      Runs locally on your machine. You are responsible for your use of downloaded audio.
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
