@@ -22,4 +22,5 @@ if ! command -v ffmpeg >/dev/null 2>&1; then
 fi
 
 echo "→ Starting DJHelper…"
+( sleep 4 && open "http://localhost:8765" >/dev/null 2>&1 ) &
 exec ./.venv/bin/python -m backend.main

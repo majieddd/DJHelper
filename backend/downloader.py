@@ -34,7 +34,7 @@ def download_track(track: dict) -> Path:
     stem = _safe(f"{track.get('artist','')} - {track.get('title','')}")
     outtmpl = str(config.MUSIC_DIR / f"{stem}.%(ext)s")
 
-    ydl_opts = {
+    base_opts = {
         "format": "bestaudio/best",
         "outtmpl": outtmpl,
         "noplaylist": True,
@@ -48,8 +48,21 @@ def download_track(track: dict) -> Path:
         }],
     }
 
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        ydl.extract_info(query, download=True)
+    # YouTube returns HTTP 403 on the default web player client; the 'android'
+    # client reliably yields a downloadable stream. Try a few clients in order.
+    last_err = None
+    for clients in (["android"], ["ios"], ["web_safari"], ["tv"]):
+        opts = dict(base_opts)
+        opts["extractor_args"] = {"youtube": {"player_client": clients}}
+        try:
+            with yt_dlp.YoutubeDL(opts) as ydl:
+                ydl.extract_info(query, download=True)
+            last_err = None
+            break
+        except Exception as e:
+            last_err = e
+    if last_err is not None:
+        raise RuntimeError(f"yt-dlp failed for '{query}': {last_err}")
 
     final = config.MUSIC_DIR / f"{stem}.mp3"
     if final.exists():

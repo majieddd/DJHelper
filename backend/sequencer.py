@@ -57,9 +57,15 @@ def sequence(
     if not pool:
         return tracks
 
+    # Normalise energy across the set so the arc works even when every track is
+    # loud (absolute energy values cluster near the top otherwise).
+    raw = [t.get("energy") or 0.5 for t in pool]
+    lo, hi = min(raw), max(raw)
+    span = (hi - lo) or 1.0
+    norm = {t["id"]: (((t.get("energy") or 0.5) - lo) / span) for t in pool}
+
     # Start with the lowest-energy track (a natural set opener).
-    pool_sorted = sorted(pool, key=lambda t: t.get("energy") or 0.5)
-    current = pool_sorted[0]
+    current = min(pool, key=lambda t: norm[t["id"]])
     ordered = [current]
     remaining = [t for t in pool if t["id"] != current["id"]]
 
@@ -70,7 +76,7 @@ def sequence(
         for cand in remaining:
             harm = camelot.compatibility(current.get("camelot"), cand.get("camelot"))
             bpm = _bpm_score(current.get("bpm"), cand.get("bpm"))
-            efit = 1.0 - abs((cand.get("energy") or 0.5) - e_target)
+            efit = 1.0 - abs(norm[cand["id"]] - e_target)
             score = w["harmonic"] * harm + w["bpm"] * bpm + w["energy"] * efit
             if score > best_score:
                 best, best_score = cand, score

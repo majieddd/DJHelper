@@ -67,9 +67,17 @@ def analyze_file(path: str) -> Dict:
     chroma = librosa.feature.chroma_cqt(y=y, sr=sr)
     pc, is_major = _detect_key(chroma)
 
-    # --- Energy (perceptual-ish: RMS scaled) ---
+    # --- Energy ---
+    # Pure loudness saturates (every mastered club track is loud), so blend
+    # loudness with brightness (spectral centroid) and rhythmic density (onset
+    # strength). The sequencer additionally normalises energy across the set.
     rms = librosa.feature.rms(y=y)[0]
-    energy = float(np.clip(rms.mean() * 6.0, 0.0, 1.0))
+    centroid = librosa.feature.spectral_centroid(y=y, sr=sr)[0]
+    onset = librosa.onset.onset_strength(y=y, sr=sr)
+    loud = float(np.clip(rms.mean() / 0.15, 0.0, 1.0))
+    bright = float(np.clip(centroid.mean() / 5000.0, 0.0, 1.0))
+    density = float(np.clip(onset.mean() / 3.0, 0.0, 1.0))
+    energy = float(np.clip(0.5 * loud + 0.25 * bright + 0.25 * density, 0.0, 1.0))
 
     # --- Mix cues ---
     full_duration_ms = duration * 1000.0

@@ -1,0 +1,46 @@
+#!/usr/bin/env bash
+# DJHelper.app launcher.
+#   First run (no .venv): open Terminal so the user can watch setup/install.
+#   Later runs: start the server silently in the background and open the browser.
+set -e
+
+# Resolve the project root = the folder that contains DJHelper.app
+SELF="$(cd "$(dirname "$0")" && pwd)"          # .../DJHelper.app/Contents/MacOS
+ROOT="$(cd "$SELF/../../.." && pwd)"           # folder containing DJHelper.app
+URL="http://localhost:8765"
+
+notify() { osascript -e "display notification \"$1\" with title \"DJHelper\"" >/dev/null 2>&1 || true; }
+
+# Already running? Just open the browser.
+if curl -s --max-time 1 "$URL/api/health" >/dev/null 2>&1; then
+  open "$URL"
+  exit 0
+fi
+
+# First-time setup needs to show progress -> open Terminal and run run.sh there.
+if [ ! -d "$ROOT/.venv" ]; then
+  notify "First-time setup starting in Terminal…"
+  osascript <<EOF
+tell application "Terminal"
+  activate
+  do script "cd " & quoted form of "$ROOT" & " && ./run.sh"
+end tell
+EOF
+  exit 0
+fi
+
+# Normal launch: start the server in the background, wait for it, open browser.
+notify "Starting…"
+mkdir -p "$ROOT/data"
+cd "$ROOT"
+nohup "$ROOT/.venv/bin/python" -m backend.main > "$ROOT/data/server.log" 2>&1 &
+
+for i in $(seq 1 40); do
+  if curl -s --max-time 1 "$URL/api/health" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.5
+done
+
+open "$URL"
+notify "DJHelper is running at localhost:8765"

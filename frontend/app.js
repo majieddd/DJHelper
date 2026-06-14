@@ -14,7 +14,7 @@ async function refreshHealth() {
   try {
     const h = await api("/api/health");
     const pills = [
-      `<span class="pill ${h.spotify_configured ? "ok" : "bad"}">Spotify ${h.spotify_configured ? "✓" : "not set"}</span>`,
+      `<span class="pill ok">Spotify ✓ ${h.spotify_configured ? "API" : "public"}</span>`,
       `<span class="pill ${h.ollama ? "ok" : ""}">Gemma ${h.ollama ? "✓ " + h.ollama_model : "offline"}</span>`,
     ];
     $("pills").innerHTML = pills.join("");
@@ -59,7 +59,8 @@ $("importBtn").onclick = async () => {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ url }),
     });
-    $("importMsg").textContent = `Imported ${r.imported} tracks.`;
+    $("importMsg").textContent = `Imported ${r.imported} tracks from "${r.name}".`;
+    if (r.name) $("setName").value = r.name;
     await refreshLibrary();
   } catch (e) {
     $("importMsg").textContent = "Error: " + e.message;

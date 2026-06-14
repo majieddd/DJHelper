@@ -60,12 +60,12 @@ def library():
 @app.post("/api/playlist")
 def import_playlist(req: PlaylistReq):
     try:
-        tracks = spotify.fetch_playlist(req.url)
+        tracks, name = spotify.fetch_playlist(req.url)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
     for t in tracks:
         store.upsert(t)
-    return {"imported": len(tracks), "tracks": tracks}
+    return {"imported": len(tracks), "tracks": tracks, "name": name}
 
 
 @app.post("/api/process")

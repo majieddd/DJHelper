@@ -29,7 +29,7 @@ TRAKTOR_VOLUME = os.getenv("TRAKTOR_VOLUME", "Macintosh HD")
 
 # Ollama (optional local AI). Model: gemma2:2b / gemma2:9b / gemma3:12b etc.
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma2:2b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "gemma4:e2b")
 
 # How many beats before the end of a track to place the "mix-out" hot cue.
 MIX_OUT_BEATS = int(os.getenv("DJHELPER_MIX_OUT_BEATS", "32"))

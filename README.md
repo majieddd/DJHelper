@@ -23,37 +23,47 @@ A public web link is sandboxed and can do none of these, so DJHelper ships as a 
 
 ## Quick start
 
+**The easy way — double-click `DJHelper.app`.**
+The first launch opens a Terminal window, sets up a virtual environment, installs
+dependencies, and opens the app in your browser. Every launch after that just
+starts silently and opens **http://localhost:8765**.
+
+**Or from the command line:**
 ```bash
 git clone <your-repo-url> DJHelper
 cd DJHelper
-cp .env.example .env          # then add your Spotify credentials
 brew install ffmpeg           # required for audio extraction
-./run.sh                      # first run sets up a venv + installs deps
+./run.sh                      # sets up a venv, installs deps, opens the app
 ```
 
-Open **http://localhost:8765**.
+That's it — **no Spotify account or API keys required.** DJHelper reads public
+playlists straight from Spotify's public embed data.
 
-### 1. Spotify credentials
-1. Go to <https://developer.spotify.com/dashboard> → **Create app** (any name/redirect).
-2. Copy the **Client ID** and **Client Secret** into `.env`.
-   These use the *client-credentials* flow (no login) and read **public** playlists.
+### Spotify credentials (optional)
+You only need these for **private** playlists. Create a free app at
+<https://developer.spotify.com/dashboard> and put the Client ID/Secret in `.env`.
 
-> Note: Spotify deprecated its audio-features/analysis API for new apps in late 2024, so DJHelper computes BPM/key/energy itself from the audio — which is more accurate for DJing anyway.
+> Spotify deprecated its audio-features/analysis API for new apps in late 2024,
+> so DJHelper computes BPM/key/energy itself from the audio — which is more
+> accurate for DJing anyway.
 
-### 2. Local AI (optional)
+### Local AI (optional)
 ```bash
 # install Ollama from https://ollama.com, then:
-ollama pull gemma2:2b      # light & fast
-# or, if you have the RAM/VRAM:
-ollama pull gemma2:9b
+ollama pull gemma4:e2b      # small, fast edge model (default)
+# fallbacks if that tag isn't available for you:
+ollama pull gemma3n:e2b
+ollama pull gemma2:2b
 ```
-Set `OLLAMA_MODEL` in `.env`. If Ollama isn't running, DJHelper just uses the deterministic harmonic engine (which is excellent on its own).
+Set `OLLAMA_MODEL` in `.env` to match. If Ollama isn't running, DJHelper simply
+uses the deterministic harmonic engine (which is excellent on its own) and the
+AI toggle stays disabled.
 
 ---
 
 ## How it works
 
-1. **Import** — paste a Spotify playlist URL. DJHelper pulls the track list.
+1. **Import** — paste a public Spotify playlist URL. DJHelper pulls the track list (no login).
 2. **Download & analyze** — for each track it finds a matching file in your music folder, or downloads it with `yt-dlp` (toggleable), then analyzes it:
    - **BPM** via beat tracking (folded into a sane DJ range)
    - **Key** via Krumhansl-Schmuckler profiles → **Camelot** code
@@ -87,9 +97,11 @@ Set **`TRAKTOR_VOLUME`** in `.env` to your boot drive's name (Finder sidebar —
 ## Project layout
 
 ```
+DJHelper.app     double-click launcher (macOS)
+run.sh           CLI launcher / first-run setup
 backend/
   main.py        FastAPI app + serves the UI
-  spotify.py     playlist import (spotipy, client-credentials)
+  spotify.py     playlist import (credential-free embed scrape + API fallback)
   downloader.py  yt-dlp wrapper + local-file matching
   analysis.py    librosa BPM / key / energy / cues
   camelot.py     key → Camelot + harmonic compatibility
