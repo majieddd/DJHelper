@@ -73,7 +73,12 @@ AI toggle stays disabled.
    - harmonic compatibility (Camelot wheel),
    - BPM proximity (half/double-time aware),
    - an energy curve that rises to a peak then eases off.
-   Tune the weights with the sliders; optionally let Gemma re-order and narrate.
+   Tune the weights with the sliders. Turn on **AI set notes** to have Gemma
+   read the finished set and describe its arc, peak, and any transitions to
+   hand-mix. (The deterministic engine handles the *ordering* — a small edge
+   model like `gemma4:e2b` can't out-sequence harmonic math, so Gemma's job is
+   the read/narrative. A larger model may also re-rank; the app keeps whichever
+   order is harmonically sound.)
 4. **Export** — writes a Traktor `.nml` (tempo + Mix In/Out hot cues + an ordered playlist) and an `.m3u8`, into `data/exports/`.
    - In Traktor: **File ▸ Import Collection** → pick the `.nml`, or drag the `.m3u8` into a playlist.
 

@@ -83,14 +83,25 @@ def reorder(ordered: List[dict]) -> Optional[List[str]]:
         )
         r.raise_for_status()
         data = json.loads(r.json().get("response", "[]"))
-        if isinstance(data, dict):  # model sometimes wraps it
+        if isinstance(data, dict):  # model sometimes wraps it, e.g. {"id": [...]}
             for v in data.values():
                 if isinstance(v, list):
                     data = v
                     break
-        ids = [x for x in data if isinstance(x, str)]
         valid = {t["id"] for t in ordered}
-        ids = [i for i in ids if i in valid]
-        return ids if len(ids) == len(ordered) else None
+        # Take the model's order for the ids it actually returned (dedup, valid
+        # only), then append any tracks it omitted in their algorithmic order.
+        # This guarantees a full permutation even when a small model drops or
+        # duplicates a few ids -- the AI still shapes the set, nothing is lost.
+        seen = set()
+        model_order = []
+        for x in data:
+            if isinstance(x, str) and x in valid and x not in seen:
+                seen.add(x)
+                model_order.append(x)
+        if len(model_order) < max(2, len(ordered) // 2):
+            return None  # too little usable signal -> keep the algorithmic order
+        missing = [t["id"] for t in ordered if t["id"] not in seen]
+        return model_order + missing
     except Exception:
         return None

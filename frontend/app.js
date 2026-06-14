@@ -121,8 +121,11 @@ $("sequenceBtn").onclick = async () => {
     });
     currentOrder = r.ordered.map((t) => t.id);
     renderSet(r.ordered);
-    if (r.narrative) { $("narrative").classList.remove("hidden"); $("narrative").textContent = r.narrative; }
-    else $("narrative").classList.add("hidden");
+    if (r.narrative) {
+      const tag = r.ai_used ? " <span class='text-zinc-400'>(Gemma also re-ranked the order)</span>" : "";
+      $("narrative").classList.remove("hidden");
+      $("narrative").innerHTML = `<div class="font-semibold mb-1">🤖 Gemma's read of your set${tag}</div>${esc(r.narrative)}`;
+    } else $("narrative").classList.add("hidden");
   } catch (e) { alert(e.message); }
   $("sequenceBtn").disabled = false;
   $("sequenceBtn").textContent = "Build set";
