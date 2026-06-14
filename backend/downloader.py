@@ -31,7 +31,11 @@ def download_track(track: dict) -> Path:
     if not query:
         raise RuntimeError("Track has no artist/title to search for.")
 
-    stem = _safe(f"{track.get('artist','')} - {track.get('title','')}")
+    # Append a short token from the track id so two similarly-named tracks
+    # (e.g. a song and its remix) can't collide on the same filename.
+    tid = track.get("id", "")
+    token = re.sub(r"\W", "", tid)[-6:] or "000000"
+    stem = _safe(f"{track.get('artist','')} - {track.get('title','')}") + f" [{token}]"
     outtmpl = str(config.MUSIC_DIR / f"{stem}.%(ext)s")
 
     base_opts = {
